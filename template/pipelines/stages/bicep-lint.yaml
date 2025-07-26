@@ -1,0 +1,66 @@
+parameters:
+  environment:
+  globalVariableFileName:
+  moduleVariableFileName:
+  module:
+
+stages:
+  - stage: BicepLint
+    displayName: "${{ parameters.environment }}: LINT"
+    variables:
+      - template: ${{ parameters.globalVariableFileName }}@self
+        parameters:
+          environment: ${{ parameters.environment }}
+      - template: ${{ parameters.moduleVariableFileName }}@self
+        parameters:
+          environment: ${{ parameters.environment }}
+    jobs:
+      - job: LintCode
+        displayName: "Bicep Lint & Build"
+        steps:
+          - checkout: devops_templates
+            displayName: "Checkout Azure DevOps Template"
+          - checkout: self
+            displayName: "Checkout Source Code"
+          # - script: |
+          #     cd $(Build.SourcesDirectory)
+          #     pwd
+          #     ls -la
+          - task: AzureCLI@2
+            displayName: "Install Bicep CLI"
+            # condition: and(succeeded(), eq(variables['Build.Reason'], 'Manual'))
+            inputs:
+              azureSubscription: ${{ variables.serviceConnectionName }}
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                echo "${{ variables.serviceConnectionName }}"
+                echo "$(serviceConnectionName)"
+                az bicep install
+                az bicep version
+              env:
+          - task: AzureCLI@2
+            displayName: "Lint & Build Bicep"
+            inputs:
+              azureSubscription: ${{ variables.serviceConnectionName }}
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                echo "Linting Bicep file: $(Build.SourcesDirectory)/$(srcDirectory)/$(templateFile)"
+                az bicep lint --file $(Build.SourcesDirectory)/$(srcDirectory)/$(templateFile)
+
+          # echo "Bicep build/compiled successfully!"
+          # az bicep build --file ./$(srcDirectory)/$(templateFile) --parameters ./$(srcDirectory)/$(parameterFile) --stdout
+          # - task: AzureCLI@2
+          #   displayName: "Validate Bicep with Parameters"
+          #   inputs:
+          #     azureSubscription: "sc-azure-dev"
+          #     scriptType: "bash"
+          #     scriptLocation: "inlineScript"
+          #     inlineScript: |
+          #       az deployment group validate \
+          #         --resource-group $(resourceGroupName) \
+          #         --template-file $(Build.SourcesDirectory)/$(srcDirectory)/$(templateFile) \
+          #         --parameters $(Build.SourcesDirectory)/$(srcDirectory)/$(parameterFile)
+          #       echo "Bicep template validated successfully!"
+  #az bicep lint --file

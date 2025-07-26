@@ -1,0 +1,41 @@
+parameters:
+  environment:
+
+# APIM specific variables
+variables:
+  # Resource naming
+  ${{ if eq(parameters.environment, 'dev') }}:
+    srcDirectory: "infrastructure"
+    templateFile: "apim/main.bicep"
+    parameterFile: "apim/parameters/${{ lower(parameters.environment) }}.bicepparam"
+    environment: ${{ parameters.environment }}
+    deploymentScope: "resourceGroup"
+    location: "eastus"
+    resourceGroupName: "rg-jabawag-${{ lower(parameters.environment) }}"
+
+  ${{ if eq(parameters.environment, 'uat') }}:
+    srcDirectory: "apim/"
+    templateFile: "main.bicep"
+    parameterFile: "parameters/${{ parameters.environment }}.bicepparam"
+    environment: ${{ parameters.environment }}
+    deploymentScope: "resourceGroup"
+    location: "eastus"
+    resourceGroupName: "rg-jabawag-${{ lower(parameters.environment) }}"
+
+  ${{ if eq(parameters.environment, 'prd') }}:
+    srcDirectory: "/apim"
+    templateFile: "/main.bicep"
+    parameterFile: "/parameters/${{ parameters.environment }}.bicepparam"
+    environment: ${{ parameters.environment }}
+    deploymentScope: "resourceGroup"
+    location: "eastus"
+    resourceGroupName: "rg-jabawag-${{ lower(parameters.environment) }}"
+
+    # # Optional resource tags (can be omitted if no tagging needed)
+    # resourceTags:
+    #   {
+    #     "Environment": "${{ parameters.environment }}",
+    #     "Service": "API Management",
+    #     "ManagedBy": "Bicep",
+    #     "Module": "APIM",
+    #   }

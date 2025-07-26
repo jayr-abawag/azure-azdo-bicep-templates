@@ -1,0 +1,31 @@
+parameters:
+  environment:
+
+variables:
+  # Environment: DEV
+  ${{ if eq(lower(parameters.environment), 'dev') }}:
+    deployTarget: "dev"
+    deploymentName: "development"
+    serviceConnectionName: "sc-azure-${{ lower(parameters.environment) }}"
+    pipelineVariableGroup: "vg-${{ lower(parameters.environment) }}"
+
+  # Environment: UAT
+  ${{ if eq(parameters.environment, 'UAT') }}:
+    deployTarget: "uat"
+    deploymentName: "user-acceptance"
+    serviceConnectionName: "sc-azure-${{ parameters.environment }}"
+    pipelineVariableGroup: "vg-${{ parameters.environment }}"
+
+  # Environment: PRD
+  ${{ if eq(parameters.environment, 'PRD') }}:
+    deployTarget: "prd"
+    deploymentName: "production"
+    serviceConnectionName: "sc-azure-${{ parameters.environment }}"
+    pipelineVariableGroup: "vg-${{ parameters.environment }}"
+
+  # Run: DESTROY
+  # -->default: false
+  BicepDestroy: ${{ startsWith(variables['Build.SourceBranch'], 'refs/heads/destroy') }}
+  # Run: DEPLOY
+  # -->default: false
+  BicepDeploy: ${{ or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/feature/*')) }}

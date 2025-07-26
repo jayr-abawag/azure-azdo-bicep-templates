@@ -1,0 +1,32 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "name": {
+      "value": "iig-eus-<vertical>-dev-apim-service"
+    },
+    "location": {
+      "value": "East US"
+    },
+    "publisherEmail": {
+      "value": "per.cedersund@3cloudsolutions.com"
+    },
+    "publisherName": {
+      "value": "Ignyte DevOps Team"
+    },
+    "skuName": {
+      "value": "Developer"
+    },
+    "skuCapacity": {
+      "value": 1
+    },
+    "tags": {
+      "value": {
+        "environment": "development",
+        "project": "ignyte",
+        "costCenter": "IIG-Dev",
+        "owner": "Ignyte DevOps"
+      }
+    }
+  }
+}

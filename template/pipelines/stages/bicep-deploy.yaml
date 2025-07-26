@@ -1,0 +1,111 @@
+parameters:
+  environment:
+  globalVariableFileName:
+  moduleVariableFileName:
+  module:
+
+stages:
+  - stage: BicepDeploy
+    displayName: "${{ parameters.environment }}: DEPLOY"
+    variables:
+      - template: ${{ parameters.globalVariableFileName }}@self
+        parameters:
+          environment: ${{ parameters.environment }}
+      - template: ${{ parameters.moduleVariableFileName }}@self
+        parameters:
+          environment: ${{ parameters.environment }}
+    jobs:
+      - deployment: DeployCode
+        displayName: "Deploy ${{ parameters.module }}"
+        environment: ${{ parameters.environment }}
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: devops_templates
+                  displayName: "Checkout Azure DevOps Template"
+                - checkout: self
+                  displayName: "Checkout Source Code"
+                - task: AzureResourceManagerTemplateDeployment@3
+                  name: DeployBicepFile
+                  displayName: "Deploy Bicep file"
+                  inputs:
+                    deploymentScope: ${{ variables.targetScope }}
+                    connectedServiceName: ${{ variables.serviceConnectionName }}
+                    deploymentName: "DEPLOY-${{ parameters.module }}-${{ parameters.environment }}"
+                    location: ${{ variables.location }}
+                    resourceGroupName: ${{ variables.resourceGroupName }}
+                    csmFile: "$(Build.SourcesDirectory)/$(srcDirectory)/$(templateFile)"
+                    csmParametersFile: "$(Build.SourcesDirectory)/$(srcDirectory)/$(parameterFile)"
+                    deploymentMode: "Incremental"
+                    deploymentOutputs: deploymentOutputs
+
+                - bash: |
+                    echo "##vso[task.setvariable variable=appServiceAppHostName;isOutput=true]$(echo $DEPLOYMENT_OUTPUTS | jq -r '.appServiceAppHostName.value')"
+                  name: SaveDeploymentOutputs
+                  displayName: "Save deployment outputs into variables"
+                  env:
+                    DEPLOYMENT_OUTPUTS: $(deploymentOutputs)
+# parameters:
+#   - name: templateFile
+#     type: string
+#   - name: templateParameterFile
+#     type: string
+#     default: ""
+#   - name: azureServiceConnection
+#     type: string
+#   - name: location
+#     type: string
+#     default: "westeurope"
+#   - name: deploymentScope
+#     type: string
+#     default: "Subscription"
+#   - name: resourceGroupName
+#     type: string
+#     default: ""
+#   - name: environment
+#     type: string
+#     default: ""
+
+# stages:
+#   - stage: Deploy
+#     jobs:
+#       - deployment: DeployBicep
+#         environment: ${{ parameters.environment }}
+#         strategy:
+#           runOnce:
+#             deploy:
+#               steps:
+#                 - task: AzureResourceManagerTemplateDeployment@3
+#                   inputs:
+#                     deploymentScope: ${{ parameters.deploymentScope }}
+#                     azureResourceManagerConnection: ${{ parameters.azureServiceConnection }}
+#                     location: ${{ parameters.location }}
+#                     resourceGroupName: ${{ parameters.resourceGroupName }}
+#                     templateLocation: "Linked artifact"
+#                     csmFile: "$(Build.SourcesDirectory)/${{ parameters.templateFile }}"
+#                     ${{ if ne(parameters.templateParameterFile, '') }}:
+#                       csmParametersFile: "$(Build.SourcesDirectory)/${{ parameters.templateParameterFile }}"
+#                     deploymentMode: "Incremental"
+# - stage: Deploy
+#   jobs:
+#     - deployment: Deploy
+#       environment: BicepEnvironment
+#       strategy:
+#         runOnce:
+#           deploy:
+#             steps:
+#             - checkout: self
+
+#             - task: AzureResourceManagerTemplateDeployment@3
+#               name: DeployBicepTemplate
+#               inputs:
+#                 deploymentScope: 'Subscription'
+#                 azureResourceManagerConnection: '$(azureServiceConnection)'
+#                 action: 'Create Or Update Resource Group'
+#                 location: '$(location)'
+#                 templateLocation: 'Linked artifact'
+#                 csmFile: '$(Build.SourcesDirectory)/$(templateFile)'
+#                 csmParametersFile: '$(Build.SourcesDirectory)/$(templateParameterFile)'
+#                 deploymentMode: 'Incremental'
+#                 deploymentName: 'DeployPipelineTemplate'

@@ -1,0 +1,55 @@
+parameters:
+  environment:
+  globalVariableFileName:
+  moduleVariableFileName:
+  module:
+
+stages:
+  - stage: BicepPreview
+    displayName: "${{ parameters.environment }}: PREVIEW"
+    variables:
+      - template: ${{ parameters.globalVariableFileName }}@self
+        parameters:
+          environment: ${{ parameters.environment }}
+      - template: ${{ parameters.moduleVariableFileName }}@self
+        parameters:
+          environment: ${{ parameters.environment }}
+    jobs:
+      - job: PreviewAzureChanges
+        displayName: "Preview Azure changes"
+        variables:
+          serviceConnectionName: ${{ variables.serviceConnectionName }}
+        pool:
+          vmImage: "ubuntu-latest"
+        steps:
+          - checkout: devops_templates
+            displayName: "Checkout Azure DevOps Template"
+          - checkout: self
+            displayName: "Checkout Source Code"
+          # - script: |
+          #     echo "Service Connection: $(serviceConnectionName)"
+          #     echo "Template File: $(templateFile)"
+          #     echo "Parameter File: $(parameterFile)"
+          - task: AzureCLI@2
+            # name: RunWhatIf
+            displayName: "Run what-if"
+            inputs:
+              azureSubscription: ${{ variables.serviceConnectionName }}
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                az deployment group what-if \
+                  --resource-group $(resourceGroupName) \
+                  --template-file $(Build.SourcesDirectory)/$(srcDirectory)/$(templateFile) \
+                  --parameters "$(Build.SourcesDirectory)/$(srcDirectory)/$(parameterFile)"
+
+        # az deployment group what-if \
+        #   --resource-group $(resourceGroupName) \
+        #   --template-file $(Build.SourcesDirectory)/$(srcDirectory)/$(templateFile) \
+        #   --parameters "$(Build.SourcesDirectory)/$(srcDirectory)/$(parameterFile)"
+
+        # inlineScript: |
+        #   az deployment group what-if \
+        #     --resource-group $(resourceGroupName) \
+        #     --template-file $(Build.SourcesDirectory)/$(srcDirectory)/$(templateFile) \
+        #     --parameters "$(Build.SourcesDirectory)/$(srcDirectory)/$(parameterFile)"

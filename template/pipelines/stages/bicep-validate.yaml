@@ -1,0 +1,42 @@
+parameters:
+  environment:
+  globalVariableFileName:
+  moduleVariableFileName:
+  module:
+
+stages:
+  - stage: BicepValidate
+    displayName: "${{ parameters.environment }}: VALIDATE"
+    variables:
+      - template: ${{ parameters.globalVariableFileName }}@self
+        parameters:
+          environment: ${{ parameters.environment }}
+      - template: ${{ parameters.moduleVariableFileName }}@self
+        parameters:
+          environment: ${{ parameters.environment }}
+    jobs:
+      - job: ValidateBicepCode
+        displayName: "Validate Bicep Code"
+        pool:
+          vmImage: "ubuntu-latest"
+        steps:
+          - checkout: devops_templates
+            displayName: "Checkout Azure DevOps Template"
+          - checkout: self
+            displayName: "Checkout Source Code"
+          - task: AzureResourceManagerTemplateDeployment@3
+            displayName: "Validate Bicep Template"
+            inputs:
+              deploymentScope: ${{ variables.targetScope }}
+              connectedServiceName: ${{ variables.serviceConnectionName }}
+              location: ${{ variables.location }}
+              templateLocation: "Linked artifact"
+              deploymentMode: "Validation"
+              resourceGroupName: ${{ variables.resourceGroupName }}
+              csmFile: "$(Build.SourcesDirectory)/$(srcDirectory)/$(templateFile)"
+              # ${{ if ne(parameters.parameterFile, '') }}:
+              csmParametersFile: "$(Build.SourcesDirectory)/$(srcDirectory)/$(parameterFile)"
+              # overrideParameters: >
+              #   -environment ${{ parameters.environment }}
+              deploymentName: "VALIDATE-${{ parameters.module }}-${{ parameters.environment }}"
+              deploymentOutputs: deploymentOutputs

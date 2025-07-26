@@ -1,0 +1,38 @@
+parameters:
+  module:
+  environment:
+  globalVariableFileName:
+  moduleVariableFileName:
+  deploymentMode:
+  
+stages:
+- template: stages/bicep-lint.yaml@devops_templates
+  parameters:
+    environment: ${{ parameters.environment }}
+    globalVariableFileName: ${{ parameters.globalVariableFileName }}
+    moduleVariableFileName: ${{ parameters.moduleVariableFileName }}
+    module: ${{ parameters.module }}
+    # resourceVariableFileName: ${{ parameters.resourceVariableFileName }}
+
+- template: stages/bicep-validate.yaml@devops_templates
+  parameters:
+    environment: ${{ parameters.environment }}
+    globalVariableFileName: ${{ parameters.globalVariableFileName }}
+    moduleVariableFileName: ${{ parameters.moduleVariableFileName }}
+    module: ${{ parameters.module }}
+    
+- ${{ if or(eq(parameters.deploymentMode, 'Deploy'), eq(parameters.deploymentMode, 'Preview')) }}:
+  - template: stages/bicep-preview.yaml@devops_templates
+    parameters:
+      environment: ${{ parameters.environment }}
+      globalVariableFileName: ${{ parameters.globalVariableFileName }}
+      moduleVariableFileName: ${{ parameters.moduleVariableFileName }}
+      module: ${{ parameters.module }}
+
+- ${{ if eq(parameters.deploymentMode, 'Deploy') }}:
+  - template: stages/bicep-deploy.yaml@devops_templates
+    parameters:
+      environment: ${{ parameters.environment }}
+      globalVariableFileName: ${{ parameters.globalVariableFileName }}
+      moduleVariableFileName: ${{ parameters.moduleVariableFileName }}
+      module: ${{ parameters.module }}

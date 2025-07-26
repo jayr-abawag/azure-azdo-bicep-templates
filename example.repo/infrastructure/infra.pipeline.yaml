@@ -1,0 +1,92 @@
+name: $(BuildDefinitionName)_$(date:yyyyMMdd)$(rev:.r)
+
+# TRIGGERS
+trigger:
+  batch: true
+  branches:
+    include:
+      - feature/*
+      # - feature/jayr/azdoTemplate
+      # - hotfix/*
+      # - release/*
+    exclude:
+      - main
+  paths:
+    include:
+      - variables/prereq.variables.yaml
+      - variables/global.pipeline.variables.yaml
+      - apim/parameters/*.bicepparam
+      - apim/main.bicep
+      - 
+    exclude:
+      - README.md
+      - .gitignore
+      - .gitatributes
+      - .artifactignore
+      - docu/*
+      - examples/*
+pr:
+  branches:
+    include:
+      - main
+    exclude:
+      - feature/*
+
+# PARAMETERS    
+parameters:
+  - name: environment
+    displayName: Environment
+    type: string
+    default: DEV
+    values:
+    - DEV
+    # - UAT
+    # - PRD
+
+# MODULES to run: CHECK with team if other modules will use the same pipeline
+  - name: module
+    displayName: BICEP module
+    type: string
+    default: APIM
+    values:
+      - APIM
+
+# # Optional: Provision self-hosted agents(private agents) or use azdo-hosted agents(public agents)
+#   - name: create_self_hosted_agent
+#     displayName: Provision Self-hosted Agents
+#     type: boolean
+#     default: false
+
+# VARIABLES Groups
+  - name: deploymentMode
+    displayName: Deployment Mode
+    type: string
+    default: Preview
+    values:
+    - Preview
+    - Deploy
+
+
+variables:
+  - name: globalVariableFileName
+    value: /variables/global.variables.yaml
+  - name: moduleVariableFileName
+    value: /variables/apim.variables.yaml
+
+# REPO: Reusable BICEP deployments
+resources:
+  repositories:
+    - repository: devops_templates
+      type: git
+      name: AzureProjects/devops
+      ref: refs/heads/feature/jayr/azdoTemplate
+      
+# PIPELINES templates
+stages:
+  - template: pipelines/bicep.main.pipeline.yaml@devops_templates
+    parameters:
+      environment: ${{ parameters.environment }}
+      module: ${{ parameters.module }}
+      globalVariableFileName: ${{ variables.globalVariableFileName }}
+      moduleVariableFileName: ${{ variables.moduleVariableFileName }}
+      deploymentMode: ${{ parameters.deploymentMode }}
